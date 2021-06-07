@@ -67,11 +67,11 @@ def index():
     b=100
     #return "Hello,Beautiful"
     sum=add(a,b)
-    # df=stock_model()
-    dataf=pd.read_csv("static/Dataset.csv")
-    dataf=dataf.to_json()
-    str1=json.loads(dataf)
-    return render_template("index.html",data=dataf)
+    df=stock_model()
+    #dataf=pd.read_csv("static/Dataset.csv")
+    #dataf=dataf.to_json()
+    #str1=json.loads(dataf)
+    return render_template("index.html",data=df)
     # return str(a+b)
     # return sum
     # return df.to_html(header="true", table_id="table")
