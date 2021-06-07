@@ -71,9 +71,9 @@ def index():
     dataf=pd.read_csv("static/Dataset.csv")
     dataf=dataf.to_json()
     str1=json.loads(dataf)
-    #return render_template("index.html",data=dataf)
+    return render_template("index.html",data=dataf)
     # return str(a+b)
-    return sum
+    # return sum
     # return df.to_html(header="true", table_id="table")
    
 
