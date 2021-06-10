@@ -673,9 +673,10 @@ def recommendation_model(df,rf):
 
         top_opr_copy=top_opr_copy.sort_values(top_opr_copy.columns[1],ascending=False)
         #need to append sentimental analysis
-        top_opr_copy.to_csv("static/tempfinal.csv")
-        
-        temp_final=pd.read_csv("static/tempfinal.csv")
+        # top_opr_copy.to_csv("static/tempfinal.csv")
+        top_opr_copy=top_opr_copy.reset_index()
+        # temp_final=pd.read_csv("static/tempfinal.csv")
+        temp_final=top_opr_copy
         sentiment=pd.read_csv("static/Sentiment_scores.csv")
         sentiment=sentiment.T
         sentiment=sentiment.reset_index()
