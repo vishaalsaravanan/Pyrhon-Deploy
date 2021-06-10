@@ -672,9 +672,81 @@ def recommendation_model(df,rf):
             i+=1
 
         top_opr_copy=top_opr_copy.sort_values(top_opr_copy.columns[1],ascending=False)
+        #need to append sentimental analysis
+        top_opr_copy.to_csv("static/tempfinal.csv")
+        
+        temp_final=pd.read_csv("static/tempfinal.csv")
+        sentiment=pd.read_csv("static/Sentiment_scores.csv")
+        sentiment=sentiment.T
+        sentiment=sentiment.reset_index()
+       
+        temp_stock_tickers=temp_final.iloc[:,1].values.tolist()
+        company_list=pd.read_csv("static/companylist.csv")
+        company_list=company_list[company_list['Symbol'].isin(temp_stock_tickers)]
+        # for each_stock in recommendation_tickers:
+        #     s_counter=0
+        #     for sentiment_stock in sentiment_tickers:
+        final_arr=[]
+        for i in range(0,len(temp_final)):
+           
+           for j in range(0,len(sentiment)):
+             
+               if temp_final.iloc[i,1]==sentiment.iloc[j,0]:
+                   ticker=temp_final.iloc[i,1]
+                   # print("Hi")
+                   recomendation_score=temp_final.iloc[i,2]
+                   neutral_score=sentiment.iloc[j,1]
+                   positive_score=sentiment.iloc[j,2]
+                   negative_score=sentiment.iloc[j,3]
+                   flag=0
+                   for k in range(0,len(company_list) ):
 
+                       if temp_final.iloc[i,1] == company_list.iloc[k,0]:
+                           cname=company_list.iloc[k,1]
+                           flag=1
+                           break
+                       else :
+                           cname="Not Available"
+                
+                   new_entry={'Stock Ticker':ticker,
+                              'Organization':cname,
+                              'Recommended Perc':recomendation_score,
+                              'Neutral Mentality':neutral_score,
+                              'Positive Mentality':positive_score,
+                              'Negative Mentality':negative_score}
+                   break
+                  
+                          
     
-        return top_opr_copy
+               elif  temp_final.iloc[i,1]!=sentiment.iloc[j,0]:
+                   ticker=temp_final.iloc[i,1]
+                   recomendation_score=temp_final.iloc[i,2]
+                   neutral_score="0"
+                   positive_score="0"
+                   negative_score="0"
+                   for k in range(0,len(company_list) ):
+                      if temp_final.iloc[i,1] == company_list.iloc[k,0]:
+                           cname=company_list.iloc[k,1]
+                           flag=1
+                           break
+                      else :
+                           cname="Not Available" 
+                   new_entry={'Stock Ticker':ticker,
+                              'Organization':cname,
+                              'Recommended Perc':recomendation_score,
+                              'Neutral Mentality':neutral_score,
+                              'Positive Mentality':positive_score,
+                              'Negative Mentality':negative_score}
+
+               
+           final_arr.append(new_entry.copy())
+        Final_Recommendation=pd.DataFrame(final_arr)
+
+                   
+ 
+        
+
+        return Final_Recommendation
     
 if __name__ == '__main__':
 
