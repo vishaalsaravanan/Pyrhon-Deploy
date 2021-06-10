@@ -14,6 +14,11 @@ from flask import Flask, render_template
 import time
 from datetime import datetime
 
+#twitter imports
+import tweepy
+from textblob import TextBlob
+import nltk
+
 application=Flask(__name__)
 
 
@@ -23,6 +28,14 @@ savemetric=[]
 stockdata=pd.DataFrame()       
 
 _EXCHANGE_LIST = ['nyse', 'nasdaq', 'amex']
+
+#twitter api credentials
+#loading the twitter API credentials
+consumerKey = "KHKHhFUpP8CQexqq11oelEVBU"
+consumerSecret = "4fLYt8lqtln3bPgcXM9Ta54uaWlYRsDc8R7cPqEvA0x25zH4UW"
+accessToken = "2390597618-RW6m3lpFlBjOIfS4bf0OkQmBV1GAsqcoIqU9CZs"
+accessTokenSecret = "NUuuXfjcQ2xGqRXuhST7E2Cu87PTqS5jCwS98ao5eHF8s"
+
 
 headers = {
     'authority': 'api.nasdaq.com',
@@ -55,6 +68,53 @@ params = (
     ('download', 'true'),
 )
 
+############################## sentiment analysis start ######################################
+#getting tweets
+def getTweets(stock_name):
+    search_term = '#' + stock_name + ' -filter:retweets'
+    #create a cursor object
+    tweets = tweepy.Cursor(api.search, q=search_term, lang='en', since='2021-05-18', tweet_mode='extended').items(100)
+    #store the tweets in a variable
+    all_tweets = [tweet.full_text for tweet in tweets]
+    return all_tweets
+
+#cleaning tweets
+def clean_twt(twt):
+    if twt == 0:
+        return '0'
+    else:
+        twt = re.sub('#[A-Za-z0]+','',twt) #Removing any string with a hastag
+        twt = re.sub('\\n','',twt) #removing the \n
+        twt = re.sub('https?:\/\/\S+','', twt) #removes any hyperlinks
+        twt = "".join([char for char in twt if char not in string.punctuation]) #removing punctuation
+        twt = re.sub('[0-9]+','',twt) #removing numbers
+        return twt
+
+#finding subjectivity and polarity to the columns
+#function to get subjectivity
+def getSubjectivity(twt):
+    return TextBlob(twt).sentiment.subjectivity
+
+#function to get polarity
+def getPolarity(twt):
+    return TextBlob(twt).sentiment.polarity
+
+#function to get the sentiment outcome
+def getSentiment(score):
+    if score < 0:
+        return 'negative'
+    elif score == 0:
+        return 'neutral'
+    else:
+        return 'positive'
+
+#function to calculate percentage of positive
+def cal_percentage(positive_score):
+    positive_percentage = positive_score / 100
+    return positive_percentage
+
+############################## sentiment analysis end ######################################
+
 def daily_routine():
         models=[]
         evaluation_metric=np.array([])
@@ -72,6 +132,79 @@ def daily_routine():
         add_metric=np.array([])
         final_stock_tickers=[]
         models=["Stepwise","Svm","Lasso","Ridge","Boosted","forest"]
+        
+        ############################## sentiment analysis start ######################################
+        #assigning tickers
+        tickers = filtered_tickers
+        #create the authentication object
+        authenicate = tweepy.OAuthHandler(consumerKey, consumerSecret)
+        #set the access token and access secret token
+        authenicate.set_access_token(accessToken, accessTokenSecret)
+        #create the api object
+        api = tweepy.API(authenicate, wait_on_rate_limit=True)
+
+        print("Authentication successful...")
+        #getting tweets from twitter
+        all_stocks_df = pd.DataFrame()
+
+        filler = 0
+        #loop over the tickers to send to function
+        for t in tickers:
+            tweets_one_stock = getTweets(t)
+            all_stocks_df[t] = tweets_one_stock + [filler]*(len(all_stocks_df.index) - len(tweets_one_stock))
+
+        #cleaning tweets
+        all_stocks_cleaned_df = pd.DataFrame()
+
+        #looping through the tickers
+        for tick in tickers:
+            all_stocks_cleaned_df[tick] = all_stocks_df[tick].apply(clean_twt)
+        
+        all_stocks_polarity_df = pd.DataFrame()
+        all_stocks_subjectivity_df = pd.DataFrame()
+
+        #looping through dataframe and adding it to new dataframe
+        for ticka in tickers:
+            all_stocks_polarity_df[ticka] = all_stocks_cleaned_df[ticka].apply(getPolarity)
+            all_stocks_subjectivity_df[ticka] = all_stocks_cleaned_df[ticka].apply(getSubjectivity)
+
+        all_sentiment_df = pd.DataFrame()
+
+        for tickb in tickers:
+            all_sentiment_df[tickb] = all_stocks_polarity_df[tickb].apply(getSentiment)
+            
+
+        all_sentiment_scores_df = pd.DataFrame()
+
+        #get percentage of positive for every stock
+        #get all sentiment value counts
+        for tickc in tickers:
+            all_sentiment_scores_df[tickc] = all_sentiment_df[tickc].value_counts()
+            
+        #change nan values to 0
+        all_sentiment_scores_df = all_sentiment_scores_df.fillna(0)
+
+        temp_scores_df = pd.DataFrame()
+
+        for tickd in tickers:
+            temp_scores_df[tickd] = all_sentiment_scores_df[tickd].apply(cal_percentage)
+            
+        positive_score = []
+        for ticke in tickers:
+            positive_score.append(temp_scores_df[ticke][1])
+
+        print("Hey Roobesh! It's done! Check out the temp_scores_df")
+
+        temp_scores_df.to_csv('Sentiment_scores.csv')
+
+        #final sentiment filtering
+        #reading the saved sentiment scores
+        sentiment_score_df = pd.read_csv('Sentiment_scores.csv')
+
+        #removing the unnecessary column
+        sentiment_score_df = sentiment_score_df.drop('Unnamed: 0', axis = 1)
+        ############################## sentiment analysis end ######################################
+
         # models.append(out)
         for model in models:
             count=0
