@@ -1,3 +1,4 @@
+import pyrebase
 import yfinance as yf
 import datetime as dt
 import pandas as pd
@@ -21,8 +22,8 @@ import nltk
 from yahoo_fin import stock_info as si 
 import re
 import string
-application=Flask(__name__)
 
+application = Flask(__name__, template_folder = 'templates', static_folder='static')
 
 # pip list --format=freeze >requirements.txt
 model,accuracy,bs_error,squared_error,rms_error=0,0,0,0,0
@@ -324,16 +325,107 @@ sched = BackgroundScheduler(daemon=True)
 sched.add_job(daily_routine,'interval',minutes=1440)
 sched.start()
 
-@application.route('/')
-def index():
-    
-    df=stock_model()
-    return render_template("index.html",data=df)
+
+def user_risk_calculator():
+    #firebase configuration information
+    firebaseConfig = {
+    "apiKey": "AIzaSyA7C4qwXDACuVNNJjbyHpGi_mDzuvfYZQQ",
+    "authDomain": "aire-ed2c0.firebaseapp.com",
+    "databaseURL": "https://aire-ed2c0-default-rtdb.firebaseio.com/",
+    "projectId": "aire-ed2c0",
+    "storageBucket": "aire-ed2c0.appspot.com",
+    "messagingSenderId": "885283015139",
+    "appId": "1:885283015139:web:9b0adc7e08b87443ddb8d6",
+    "measurementId": "G-65KNQLBSBX"
+    };
+
+    #connecting to firebase
+    firebase = pyrebase.initialize_app(firebaseConfig)
+
+    db = firebase.database()
+
+    #retrive data
+    users = db.child("User_info").get()
 
 
-def add(a,b):
-    return str(a+b)
-    
+    #iterate throught the information to store values into dataframe
+    user_values_list = []
+    #iterate throught the users
+    for user in users.each():
+        user_values_list.append(user.val())
+
+    user_information = pd.DataFrame(user_values_list)
+
+    #------------------------Calculating risk score and tiers---------------------
+
+    #converting blank values to nan
+    user_information = user_information.replace(r'^\s*$', np.nan, regex=True)
+
+
+    #converting nan to 0
+    user_information = user_information.fillna(0)
+
+
+    #function to calculate risk score
+    def calculate_risk_score(user_ref):
+        user_row = user_information.loc[user_information['userid'] == user_ref]
+        user_row = user_row.iloc[:,8:19]
+        
+        #converting string values in numbers
+        user_row = user_row.astype(float)
+        
+        #getting mean values
+        user_mean = user_row.mean(axis = 1)
+        user_mean = round(user_mean, 2)
+        user_mean = user_mean.values
+        user_mean = user_mean[0]
+        return user_mean
+        
+
+    #iterating the dataframe to call function 
+    user_score_tot = []    
+    for user_id in user_information['userid']:
+        user_score = calculate_risk_score(user_id)
+        user_score_tot.append(user_score)
+
+    #adding list to dataframe
+    user_information['risk_score'] = user_score_tot
+
+    #tier assigning function
+    def assign_tier(score):
+        if score > 0 and score <= 0.40:
+            return 'A'
+        elif score > 0.40 and score <= 0.60:
+            return 'B'
+        elif score > 0.60 and score <= 0.80:
+            return 'C'
+        else:
+            return 'D'
+        
+    #calling function to assign tiers
+    tier_list = []
+    for score in user_information['risk_score']:
+        tier_val = assign_tier(score)
+        tier_list.append(tier_val)
+        
+    #adding tier list to dataframe
+    user_information['tier'] = tier_list
+
+    #converting all values in tables to string
+    user_information = user_information.drop('risk_score', axis = 1)
+    user_score_tot_str = [str(n) for n in user_score_tot]
+    user_information['risk_score'] = user_score_tot_str
+
+    #--------------------Sending data to firebase---------------------------------
+
+    for i in range(len(user_information)):
+        user_score = user_information.loc[i, 'risk_score']
+        user_tier = user_information.loc[i, 'tier']
+        user_id = user_information.loc[i, 'userid']
+        data = {"risk_score" : user_score, "tier": user_tier}
+        db.child("User_info").child(user_id).update(data)
+    return "firebase successful"
+
 def get_tickers_filtered(mktcap_min=None, mktcap_max=None, sectors=None):
     tickers_list = []
     for exchange in _EXCHANGE_LIST:
@@ -748,9 +840,39 @@ def recommendation_model(df,rf):
         
 
         return Final_Recommendation
+
+
+@application.route('/')
+def index():
+    return render_template('index.html')
+
+@application.route('/signup.html')
+def signup():
+    return render_template('signup.html')
+
+@application.route('/signin.html')
+def signin():
+    return render_template('signin.html')
+
+@application.route('/userInfoForm.html')
+def userInfoForm():
+    return render_template('userInfoForm.html')
+
     
+@application.route('/mainpagetable.html')
+def mainpagetable():
+    user_risk_calculator()
+    return render_template('mainpagetable.html')
+
+@application.route('/similar_users.html')
+def similar_users():
+    return render_template('similar_users.html')
+
+@application.route('/finalrecommendations.html')
+def finalrecommendations():
+    df = stock_model()
+    return render_template('finalrecommendation.html', data = df)
+
+
 if __name__ == '__main__':
-
-
-          # stock_model() 
-        application.run(debug=True)
+    application.run(debug=True)
