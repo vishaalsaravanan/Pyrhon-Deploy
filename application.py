@@ -132,7 +132,7 @@ def daily_routine():
 
 
 sched = BackgroundScheduler(daemon=True)
-sched.add_job(daily_routine,'interval',minutes=1)
+sched.add_job(daily_routine,'interval',minutes=1440)
 sched.start()
 
 @application.route('/')
