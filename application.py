@@ -18,7 +18,9 @@ from datetime import datetime
 import tweepy
 from textblob import TextBlob
 import nltk
-
+from yahoo_fin import stock_info as si 
+import re
+import string
 application=Flask(__name__)
 
 
@@ -36,6 +38,11 @@ consumerSecret = "4fLYt8lqtln3bPgcXM9Ta54uaWlYRsDc8R7cPqEvA0x25zH4UW"
 accessToken = "2390597618-RW6m3lpFlBjOIfS4bf0OkQmBV1GAsqcoIqU9CZs"
 accessTokenSecret = "NUuuXfjcQ2xGqRXuhST7E2Cu87PTqS5jCwS98ao5eHF8s"
 
+authenicate = tweepy.OAuthHandler(consumerKey, consumerSecret)
+        #set the access token and access secret token
+authenicate.set_access_token(accessToken, accessTokenSecret)
+        #create the api object
+api = tweepy.API(authenicate, wait_on_rate_limit=True)
 
 headers = {
     'authority': 'api.nasdaq.com',
@@ -116,6 +123,60 @@ def cal_percentage(positive_score):
 ############################## sentiment analysis end ######################################
 
 def daily_routine():
+        ##################################Daily Recommendationt############################
+        tickers = si.tickers_sp500()
+        tickers=tickers[0:40] #for testing 
+        recommendations = []
+        
+        for ticker in tickers:
+                lhs_url = 'https://query2.finance.yahoo.com/v10/finance/quoteSummary/'
+                rhs_url = '?formatted=true&crumb=swg7qs5y9UP&lang=en-US&region=US&' \
+                          'modules=upgradeDowngradeHistory,recommendationTrend,' \
+                          'financialData,earningsHistory,earningsTrend,industryTrend&' \
+                          'corsDomain=finance.yahoo.com'
+                          
+                url =  lhs_url + ticker + rhs_url
+                r = requests.get(url)
+                if not r.ok:
+                    recommendation = 6
+                try:
+                    result = r.json()['quoteSummary']['result'][0]
+                    recommendation =result['financialData']['recommendationMean']['fmt']
+                except:
+                    recommendation = 6
+                
+                recommendations.append(recommendation)
+                
+                
+        dataframe = pd.DataFrame(list(zip(tickers, recommendations)), columns =['Company', 'Recommendations']) 
+        dataframe = dataframe.set_index('Company')
+        
+        
+        dataframe.insert(0,"Tickers",tickers)
+        df_list=dataframe.values.T.tolist()
+        
+        company_df = pd.read_csv('static/companylist.csv')
+        ctickers=company_df.iloc[:,0].values
+        rtickers=dataframe.iloc[:,0].values    
+        
+        final_arr=[]
+        outer_index=0
+        
+        for each_ticker in rtickers:
+            inner_index=0
+            for stock_names in ctickers:
+                
+                if each_ticker==stock_names:
+                    names=company_df.iloc[inner_index,1]
+                    rs=dataframe.iloc[outer_index,1]
+                    new_entry={'Stock Ticker':each_ticker,'Stock Names':names,'Recommendation Score':rs}
+                    final_arr.append(new_entry.copy())
+                inner_index+=1
+            outer_index+=1
+            
+        Daily_Recommendation=pd.DataFrame(final_arr)
+        Daily_Recommendation.to_csv('static/Dashboard_Rec.csv')
+        ##################################Recommendation Stock Collection -1 Start############################
         models=[]
         evaluation_metric=np.array([])
         actual_date = dt.date.today()
@@ -132,18 +193,13 @@ def daily_routine():
         add_metric=np.array([])
         final_stock_tickers=[]
         models=["Stepwise","Svm","Lasso","Ridge","Boosted","forest"]
-        
+        ##################################Recommendation Stock Collection -1 END############################
+
         ############################## sentiment analysis start ######################################
         #assigning tickers
         tickers = filtered_tickers
         #create the authentication object
-        authenicate = tweepy.OAuthHandler(consumerKey, consumerSecret)
-        #set the access token and access secret token
-        authenicate.set_access_token(accessToken, accessTokenSecret)
-        #create the api object
-        api = tweepy.API(authenicate, wait_on_rate_limit=True)
 
-        print("Authentication successful...")
         #getting tweets from twitter
         all_stocks_df = pd.DataFrame()
 
@@ -195,11 +251,11 @@ def daily_routine():
 
         print("Hey Roobesh! It's done! Check out the temp_scores_df")
 
-        temp_scores_df.to_csv('Sentiment_scores.csv')
+        temp_scores_df.to_csv('static/Sentiment_scores.csv')
 
         #final sentiment filtering
         #reading the saved sentiment scores
-        sentiment_score_df = pd.read_csv('Sentiment_scores.csv')
+        sentiment_score_df = pd.read_csv('static/Sentiment_scores.csv')
 
         #removing the unnecessary column
         sentiment_score_df = sentiment_score_df.drop('Unnamed: 0', axis = 1)
