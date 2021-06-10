@@ -1,7 +1,5 @@
-
 import yfinance as yf
 import datetime as dt
-
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing,metrics
@@ -9,14 +7,12 @@ from sklearn.svm import SVR
 from sklearn.linear_model import LinearRegression,LassoLars,Ridge
 from sklearn.ensemble import GradientBoostingRegressor,RandomForestRegressor
 from sklearn.model_selection import train_test_split
-
-
 import requests
 from pandas_datareader import data
-from flask import Flask, request, render_template, session, redirect
-
+from flask import Flask, render_template
 import time
-import json
+from datetime import datetime
+
 
 application=Flask(__name__)
 
@@ -146,8 +142,7 @@ def get_stock_data(symbol, from_date, to_date):
     return df
 
 def stock_forecasting(df,modelname,stock_symbol):
-    # if stock_symbol=="WFC":
-        # print(df)
+
     forecast_col = 'Close'
     # forecast_out = int(math.ceil(0.01*len(df)))
     forecast_out =1
@@ -264,12 +259,14 @@ def choose_rf(dataframe,rf):
     final_model=""
     dataframe_copy=dataframe.copy()
     list_of_models=dataframe.iloc[[0]].values.tolist()
+    
+    #dropping model names
     dataframe_copy.columns=list_of_models    
     accuracy=dataframe_copy.iloc[[1]]
     rms_error=dataframe_copy.iloc[[4]]
     dataframe_copy.drop(0,axis=0,inplace=True)
     # dataframe_copy= dataframe_copy.sort_values(dataframe_copy.columns[1],ascending=False)
-    if (rf=="0.01"):
+    if (rf==0.01):
         
         #get the model from the indexes 
         accuracy=accuracy.set_index(pd.Index(["Accuracy"]))
@@ -281,7 +278,8 @@ def choose_rf(dataframe,rf):
         final_model=final_model.replace(")",'')
         final_model=final_model.replace(",",'')
 
-    if (rf=="0.02"):
+
+    if (rf==0.02):
         
         #get the model from the indexes 
         accuracy=accuracy.set_index(pd.Index(["Accuracy"]))
@@ -294,7 +292,7 @@ def choose_rf(dataframe,rf):
         final_model=final_model.replace(",",'')
 
     
-    if (rf=="0.03"):
+    if (rf==0.03):
         
         #get the model from the indexes 
         rms_error=rms_error.set_index(pd.Index(["RMS"]))
@@ -306,7 +304,7 @@ def choose_rf(dataframe,rf):
         final_model=final_model.replace(")",'')
         final_model=final_model.replace(",",'')
 
-    if (rf=="0.04"):
+    if (rf==0.04):
         
         #get the model from the indexes 
         rms_error=rms_error.set_index(pd.Index(["RMS"]))
@@ -319,94 +317,104 @@ def choose_rf(dataframe,rf):
         final_model=final_model.replace(",",'')
 
         
+    # dataset_to_open=pd.read_csv("static/"+final_model+"Dataset.csv")
     return final_model
 
+def daily_routine():
+        models=[]
+        evaluation_metric=np.array([])
+        actual_date = dt.date.today()
+        historic_date=pd.DataFrame()
+        eval_metric=[]
+        stock_size_counter=[]
+        past_date = actual_date - dt.timedelta(days=365 * 4)
+        actual_date = actual_date.strftime("%Y-%m-%d")
+        past_date = past_date.strftime("%Y-%m-%d")
+        filtered_tickers = get_tickers_filtered(mktcap_min=100000, mktcap_max=10000000)
+        filtered_tickers=list(dict.fromkeys(filtered_tickers))
+        total_tickers=len(filtered_tickers)
+        model_error=[]
+        add_metric=np.array([])
+        final_stock_tickers=[]
+        models=["Stepwise","Svm","Lasso","Ridge","Boosted","forest"]
+        # models.append(out)
+        for model in models:
+            count=0
+            model_name=model
+            predicted_df=np.array([])
+            historic_data=np.array([])
+            for stock_symbol in filtered_tickers:
+                count+=1
+                
+                if count<=total_tickers:
+                    prev_data=pd.DataFrame()
+                    print(' {} {}/{} '.format(stock_symbol,count,total_tickers))    
+                    dataframe = get_stock_data(stock_symbol, past_date, actual_date)
+                    prev_data=dataframe.copy()
+                    prev_dates=dataframe.copy()
+                    # moving data index
+                    prev_dates=prev_dates.reset_index()
+                    prev_dates=prev_dates['Date']
+                    historic_date=prev_dates
+                    
+                    prev_data=prev_data['Close'].values.tolist()
+                    
+                    prev_data=np.array([prev_data]).T
+                    stock_size_counter.append(prev_data.size)
+                    if (len(stock_size_counter)==1 or stock_size_counter[-2]==stock_size_counter[-1]):
+                        
+                        historic_data=np.hstack([historic_data,prev_data]) if historic_data.size else prev_data
+                        (dataframe, forecast_out,pred_arr,date_field,metrics_df) = stock_forecasting(dataframe,model,stock_symbol)
+                        
+                        df_out_metric=metric_calculation(metrics_df,count,total_tickers,model)
+                        if(count==total_tickers):
+                            add_metric=np.hstack([add_metric,np.array(df_out_metric.values.tolist())]) if add_metric.size else np.array(df_out_metric.values.tolist())   
+                        pred_values=np.array([pred_arr]).T
+                     
+                        final_stock_tickers.append(stock_symbol)
+                        metric_values=np.array([metrics_df]).T
+                        evaluation_metric=np.hstack([evaluation_metric,metric_values]) if evaluation_metric.size else metric_values
+                        predicted_df=np.hstack([predicted_df,pred_values]) if predicted_df.size else pred_values
+                   
+            final_dataframe=pd.DataFrame(predicted_df)
+            historic_dataframe=pd.DataFrame(historic_data)
+            final_stock_tickers=list(dict.fromkeys(final_stock_tickers))
+            historic_dataframe.columns=final_stock_tickers
+            historic_dataframe.insert(0,"Date",historic_date.values.tolist())
+            historic_dataframe['Date']=pd.to_datetime(historic_dataframe['Date'])
+
+            historic_dataframe=historic_dataframe.drop(len(historic_dataframe)-1)
+            
+            final_dataframe.columns=final_stock_tickers
+            final_dataframe.insert(0,"Date",date_field)
+            historic_dataframe=pd.concat([historic_dataframe,final_dataframe])
+            historic_dataframe.to_csv("static/"+model_name+"Dataset.csv") 
+           
+        add_df=pd.DataFrame(add_metric)
+        add_df.to_csv("static/Final_Metric.csv")
+        return "hello fellas"
+
+
 def stock_model():
-        # models=[]
-        # evaluation_metric=np.array([])
-        # actual_date = dt.date.today()
-        # historic_date=pd.DataFrame()
-        # eval_metric=[]
-        # stock_size_counter=[]
-        # past_date = actual_date - dt.timedelta(days=365 * 3)
-        # # symbol="AAPL"
-        # actual_date = actual_date.strftime("%Y-%m-%d")
-        # past_date = past_date.strftime("%Y-%m-%d")
-        # filtered_tickers = get_tickers_filtered(mktcap_min=80000, mktcap_max=10000000)
-        # filtered_tickers=list(dict.fromkeys(filtered_tickers))
-        # total_tickers=len(filtered_tickers)
-        # model_error=[]
-        # add_metric=np.array([])
-        timelen=time.time()
 
         rf=0.02
-        # Final_Metric=pd.read_csv('Final_Metric.csv')
-        # Final_Metric.drop(columns=['Unnamed: 0'],inplace=True)
-        # final_stock_tickers=[]
-        # out=choose_rf(Final_Metric,rf)
-        # models.append(out)
-        # for model in models:
-        #     count=0
-        #     model_name=model
-        #     predicted_df=np.array([])
-        #     historic_data=np.array([])
-        #     for stock_symbol in filtered_tickers:
-        #         count+=1
-                
-        #         if count<=total_tickers:
-        #             prev_data=pd.DataFrame()
-        #             # print(' {} {}/{} '.format(stock_symbol,count,total_tickers))    
-        #             dataframe = get_stock_data(stock_symbol, past_date, actual_date)
-        #             prev_data=dataframe.copy()
-        #             prev_dates=dataframe.copy()
-        #             # moving data index
-        #             prev_dates=prev_dates.reset_index()
-        #             prev_dates=prev_dates['Date']
-        #             historic_date=prev_dates
-                    
-        #             prev_data=prev_data['Close'].values.tolist()
-                    
-        #             prev_data=np.array([prev_data]).T
-        #             stock_size_counter.append(prev_data.size)
-        #             if (len(stock_size_counter)==1 or stock_size_counter[-2]==stock_size_counter[-1]):
-                        
-        #                 historic_data=np.hstack([historic_data,prev_data]) if historic_data.size else prev_data
-        #                 (dataframe, forecast_out,pred_arr,date_field,metrics_df) = stock_forecasting(dataframe,model,stock_symbol)
-                        
-        #                 df_out_metric=metric_calculation(metrics_df,count,total_tickers,model)
-        #                 if(count==total_tickers):
-        #                     add_metric=np.hstack([add_metric,np.array(df_out_metric.values.tolist())]) if add_metric.size else np.array(df_out_metric.values.tolist())   
-        #                 pred_values=np.array([pred_arr]).T
-                     
-        #                 final_stock_tickers.append(stock_symbol)
-        #                 metric_values=np.array([metrics_df]).T
-        #                 evaluation_metric=np.hstack([evaluation_metric,metric_values]) if evaluation_metric.size else metric_values
-        #                 predicted_df=np.hstack([predicted_df,pred_values]) if predicted_df.size else pred_values
-                   
-        #     final_dataframe=pd.DataFrame(predicted_df)
-        #     historic_dataframe=pd.DataFrame(historic_data)
-        #     historic_dataframe.columns=final_stock_tickers
-        #     historic_dataframe.insert(0,"Date",historic_date.values.tolist())
-        #     historic_dataframe['Date']=pd.to_datetime(historic_dataframe['Date'])
-        #     historic_dataframe.to_csv("Historic_Data.csv")
-        #     final_dataframe.columns=final_stock_tickers
-        #     final_dataframe.insert(0,"Date",date_field)
-        #     final_dataframe.to_csv("Dataset.csv") 
-            
-        # add_df=pd.DataFrame(add_metric)
-        # add_df.to_csv("Final_Metric.csv")
+        Final_metric=pd.read_csv("static/Final_Metric.csv")
+        Final_metric=Final_metric.drop(["Unnamed: 0"],axis=1)
+        #choose rf needs rf ,and evaluation metric as input
+        #return model name  to work on 
+        model_name=choose_rf(Final_metric, rf)
 
-        # print('Printing the data frame...')
-        # print(data)
-   
-        df_h=pd.read_csv("static/Historic_Data.csv")
-        df_h=df_h.drop(["Unnamed: 0"],axis=1)
+           
+        df_org=pd.read_csv("static/"+model_name+"Dataset.csv")
+        df_org=df_org.drop(["Unnamed: 0"],axis=1)
+
+        # df_h=pd.read_csv("static/"+"Historic_Data.csv")
+        # df_h=df_h.drop(["Unnamed: 0"],axis=1)
         
-        # df=historic_dataframe.copy()
-        #Pass on to the recommendation function
-        recommendation_array=recommendation_model(df_h, rf)
-        print(time.time()-timelen)
-        # return dataframe,risk_factor 
+        # # df=historic_dataframe.copy()
+        # #Pass on to the recommendation function
+        recommendation_array=recommendation_model(df_org, rf)
+        # # return dataframe,risk_factor 
         return recommendation_array
        
 def recommendation_model(df,rf):
@@ -441,8 +449,8 @@ def recommendation_model(df,rf):
         p_vol = [] # Define an empty array for portfolio volatility
         p_weights = [] # Define an empty array for asset weights
         num_assets = len(df.columns)
-        num_portfolios = 1000
-        time1=time.time()
+        num_portfolios = 100
+
         for portfolio in range(num_portfolios):
             weights = np.random.random(num_assets)
             weights = weights/np.sum(weights)
@@ -454,7 +462,6 @@ def recommendation_model(df,rf):
             sd = np.sqrt(var) # Daily standard deviation
             ann_sd = sd*np.sqrt(250) # Annual standard deviation = volatility
             p_vol.append(ann_sd)
-        print(time.time()-time1)
         data = {'Returns':p_ret, 'Volatility':p_vol}
 
         for counter, symbol in enumerate(df.columns.tolist()):
