@@ -28,13 +28,12 @@
   function signOut(){
     firebase.auth().signOut();
     alert("SignOut");
-    window.location = 'index.html';
     firebase.auth().onAuthStateChanged(user => {
         if(user) {
           window.location = 'userInfoForm.html';
         }
         else{
-            window.location = 'index.html';
+            window.location = '/';
         }
       });
   }

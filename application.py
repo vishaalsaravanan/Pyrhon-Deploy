@@ -11,9 +11,10 @@ from sklearn.model_selection import train_test_split
 import requests
 from pandas_datareader import data
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import time
 from datetime import datetime
+import json
 
 #twitter imports
 import tweepy
@@ -24,6 +25,7 @@ import re
 import string
 
 application = Flask(__name__, template_folder = 'templates', static_folder='static')
+risk_score = 0
 
 # pip list --format=freeze >requirements.txt
 model,accuracy,bs_error,squared_error,rms_error=0,0,0,0,0
@@ -616,7 +618,7 @@ def choose_rf(dataframe,rf):
     rms_error=dataframe_copy.iloc[[4]]
     dataframe_copy.drop(0,axis=0,inplace=True)
     # dataframe_copy= dataframe_copy.sort_values(dataframe_copy.columns[1],ascending=False)
-    if (rf==0.01):
+    if (rf>=0.40):
         
         #get the model from the indexes 
         accuracy=accuracy.set_index(pd.Index(["Accuracy"]))
@@ -629,7 +631,7 @@ def choose_rf(dataframe,rf):
         final_model=final_model.replace(",",'')
 
 
-    if (rf==0.02):
+    if (rf>0.40 and rf<=0.60):
         
         #get the model from the indexes 
         accuracy=accuracy.set_index(pd.Index(["Accuracy"]))
@@ -642,7 +644,7 @@ def choose_rf(dataframe,rf):
         final_model=final_model.replace(",",'')
 
     
-    if (rf==0.03):
+    if (rf>0.60 and rf<=0.80):
         
         #get the model from the indexes 
         rms_error=rms_error.set_index(pd.Index(["RMS"]))
@@ -654,7 +656,7 @@ def choose_rf(dataframe,rf):
         final_model=final_model.replace(")",'')
         final_model=final_model.replace(",",'')
 
-    if (rf==0.04):
+    if (rf>0.80 and rf<=1.00):
         
         #get the model from the indexes 
         rms_error=rms_error.set_index(pd.Index(["RMS"]))
@@ -674,7 +676,8 @@ def choose_rf(dataframe,rf):
 
 def stock_model():
 
-        rf=0.02
+        global risk_score
+        rf=float(risk_score)
         Final_metric=pd.read_csv("static/Final_Metric.csv")
         Final_metric=Final_metric.drop(["Unnamed: 0"],axis=1)
         #choose rf needs rf ,and evaluation metric as input
@@ -688,8 +691,20 @@ def stock_model():
 
         # # df=historic_dataframe.copy()
         # #Pass on to the recommendation function
+        if (rf>=0.40):
+            rf = 0.10
+        if (rf>0.40 and rf<=0.60):
+            rf = 0.20
+        if (rf>0.60 and rf<=0.80):
+            rf = 0.30
+        if (rf>0.80 and rf<=1.00):
+            rf = 0.40
         recommendation_array=recommendation_model(df_org, rf)
         # # return dataframe,risk_factor 
+        # #recommendation_array = recommendation_array.iloc[:,0]
+        recommendation_array = recommendation_array.reset_index()
+        recommendation_array = recommendation_array.iloc[:,1:-1]
+        recommendation_array = recommendation_array.to_json(orient = 'records')
         return recommendation_array
        
 def recommendation_model(df,rf):
@@ -801,12 +816,12 @@ def recommendation_model(df,rf):
                        else :
                            cname="Not Available"
                 
-                   new_entry={'Stock Ticker':ticker,
+                   new_entry={'Stock_Ticker':ticker,
                               'Organization':cname,
-                              'Recommended Perc':recomendation_score,
-                              'Neutral Mentality':neutral_score,
-                              'Positive Mentality':positive_score,
-                              'Negative Mentality':negative_score}
+                              'Recommended_Perc':str(recomendation_score),
+                              'Neutral_Mentality':str(neutral_score),
+                              'Positive_Mentality':str(positive_score),
+                              'Negative_Mentality':str(negative_score)}
                    break
                   
                           
@@ -824,12 +839,12 @@ def recommendation_model(df,rf):
                            break
                       else :
                            cname="Not Available" 
-                   new_entry={'Stock Ticker':ticker,
+                   new_entry={'Stock_Ticker':ticker,
                               'Organization':cname,
-                              'Recommended Perc':recomendation_score,
-                              'Neutral Mentality':neutral_score,
-                              'Positive Mentality':positive_score,
-                              'Negative Mentality':negative_score}
+                              'Recommended_Perc':str(recomendation_score),
+                              'Neutral_Mentality':str(neutral_score),
+                              'Positive_Mentality':str(positive_score),
+                              'Negative_Mentality':str(negative_score)}
 
                
            final_arr.append(new_entry.copy())
@@ -850,15 +865,20 @@ def index():
 def signup():
     return render_template('signup.html')
 
-@application.route('/signin.html')
+@application.route('/signin.html', methods=["GET", "POST"])
 def signin():
+    global risk_score 
+    if(request.method == "POST"):
+        risk_score = request.form['risk_score']
+        message = {'message': 'hello'}
+
+        return message
     return render_template('signin.html')
 
 @application.route('/userInfoForm.html')
 def userInfoForm():
     return render_template('userInfoForm.html')
-
-    
+  
 @application.route('/mainpagetable.html')
 def mainpagetable():
     user_risk_calculator()
@@ -868,10 +888,10 @@ def mainpagetable():
 def similar_users():
     return render_template('similar_users.html')
 
-@application.route('/finalrecommendations.html')
-def finalrecommendations():
+@application.route('/recommendations.html')
+def recommendations():
     df = stock_model()
-    return render_template('finalrecommendation.html', data = df)
+    return render_template('recommendations.html', data = df)
 
 
 if __name__ == '__main__':

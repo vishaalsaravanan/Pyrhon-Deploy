@@ -10,6 +10,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no" />
     <meta name="description" content="This is an example dashboard created using build-in elements and components.">
     <meta name="msapplication-tap-highlight" content="no">
+    <style>
+        @media print {
+               .noprint {
+                  visibility: hidden;
+               }
+            }
+    </style>
     <!--
     =========================================================
     * ArchitectUI HTML Theme Dashboard - v1.0.0
@@ -216,7 +223,9 @@ crossorigin="anonymous">
                                 <div class="container-fluid">
                                     <main class="row">
                                         <div class="col">
-                                            <div id="recommendtable"></div>
+                                            <div id="recommendtable" class="noprint">{{data}}</div>
+                                                <table id="rectable" class="mb-0 table table-striped"></table>
+                                            </table>
                                         </div>
                                     </main>
                             </div>
@@ -238,7 +247,62 @@ crossorigin="anonymous">
     <script src="../static/mainpagefirebase.js"></script>  
 
     <script>
+        var table_info = document.getElementById('recommendtable').innerHTML;
+        //var data_json = table_info;
+        const data_json = JSON.parse(table_info);
 
+        document.getElementById("recommendtable").style.display = "none";
+        console.log(data_json);
+        
+        buildTable(data_json);
+
+        function buildTable(data_json){
+            var cols = [];
+              
+            for (var i = 0; i < data_json.length; i++) {
+                for (var k in data_json[i]) {
+                    if (cols.indexOf(k) === -1) {
+                          
+                        // Push all keys to the array
+                        cols.push(k);
+                    }
+                }
+            }
+              
+            // Create a table element
+            var table = document.createElement("table");
+              
+            // Create table row tr element of a table
+            var tr = table.insertRow(-1);
+              
+            for (var i = 0; i < cols.length; i++) {
+                  
+                // Create the table header th element
+                var theader = document.createElement("th");
+                theader.innerHTML = cols[i];
+                  
+                // Append columnName to the table row
+                tr.appendChild(theader);
+            }
+              
+            // Adding the data to the table
+            for (var i = 0; i < data_json.length; i++) {
+                  
+                // Create a new row
+                trow = table.insertRow(-1);
+                for (var j = 0; j < cols.length; j++) {
+                    var cell = trow.insertCell(-1);
+                      
+                    // Inserting the cell at particular place
+                    cell.innerHTML = data_json[i][cols[j]];
+                }
+            }
+              
+            // Add the newely created table containing json data
+            var el = document.getElementById("rectable");
+            el.innerHTML = "";
+            el.appendChild(table);
+        }
     </script>
 </body>
 </html>
