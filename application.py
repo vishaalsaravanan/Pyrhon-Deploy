@@ -618,7 +618,7 @@ def choose_rf(dataframe,rf):
     rms_error=dataframe_copy.iloc[[4]]
     dataframe_copy.drop(0,axis=0,inplace=True)
     # dataframe_copy= dataframe_copy.sort_values(dataframe_copy.columns[1],ascending=False)
-    if (rf>=0.40):
+    if(rf>0 and rf<=0.40):
         
         #get the model from the indexes 
         accuracy=accuracy.set_index(pd.Index(["Accuracy"]))
