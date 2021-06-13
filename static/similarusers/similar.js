@@ -60,7 +60,6 @@ firebase.auth().onAuthStateChanged(function(user){
 
                             //constructing card
                             const content = `
-                            <div class="row">
                                     
                             <div class="card-container">
                                 <div class="card card-1">
@@ -79,7 +78,6 @@ firebase.auth().onAuthStateChanged(function(user){
                                 </div>
                                 </div>
                             </div> 
-                            </div>
                                 `;
 
                                 //append newly created card element to the container
@@ -93,7 +91,6 @@ firebase.auth().onAuthStateChanged(function(user){
 
                             //constructing card
                             const content_2 = `
-                            <div class="row">
                                     
                             <div class="card-container">
                                 <div class="card card-2">
@@ -112,7 +109,6 @@ firebase.auth().onAuthStateChanged(function(user){
                                 </div>
                                 </div>
                             </div> 
-                            </div>
                                 `;
 
                                 //append newly created card element to the container

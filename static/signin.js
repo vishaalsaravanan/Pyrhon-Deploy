@@ -15,6 +15,7 @@ var firebaseConfig = {
   document.getElementById('sign_in_form').addEventListener('submit', function(e){
     e.preventDefault();
 
+    $("#myDiv").css("display", "block");
     //get user info
     var email = document.getElementById('email_in');
     var password = document.getElementById('pass_in');

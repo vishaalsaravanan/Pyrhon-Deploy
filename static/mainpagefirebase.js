@@ -27,7 +27,6 @@
   });
   function signOut(){
     firebase.auth().signOut();
-    alert("SignOut");
     firebase.auth().onAuthStateChanged(user => {
         if(user) {
           window.location = 'userInfoForm.html';

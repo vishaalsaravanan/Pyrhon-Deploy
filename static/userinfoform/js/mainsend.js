@@ -27,6 +27,8 @@ firebase.auth().onAuthStateChanged(function(user){
     function submitForm(e){
         e.preventDefault();
 
+        $("#myDiv").css("display", "block");
+
         //get values
         var age = getInputVal('age')
         var country = getInputVal('country')
