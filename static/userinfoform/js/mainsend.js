@@ -84,7 +84,7 @@ firebase.auth().onAuthStateChanged(function(user){
             extra_message: extra_message
 
         }).then(() => {
-          window.location = 'mainpagetable.html';
+          window.location = 'dashboard.html';
         })
     }
     firebase.database().ref('User_info/'+current_user_id).on('value', function(snapshot){

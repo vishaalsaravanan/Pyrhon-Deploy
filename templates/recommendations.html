@@ -47,6 +47,7 @@ crossorigin="anonymous">
     
     <!--====== Style CSS ======-->
     <link rel="stylesheet" href="{{url_for('static', filename = 'land_in_up/assets/css/style.css')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename = 'mainpageassets/css/style.css')}}">
 <body>
     <header class="header-area">
         <div class="navbar-area" style="background-color: #3E68D4;">
@@ -54,7 +55,7 @@ crossorigin="anonymous">
                 <div class="row">
                     <div class="col-lg-12">
                         <nav class="navbar navbar-expand-lg">
-                            <a class="navbar-brand" href="mainpagetable.html">
+                            <a class="navbar-brand" href="dashboard.html">
                                 <h1>AIRE</h1>
                                 <!-- <img src="assets/images/AIRE_logo.png" width="111.196" height="30.566"" alt="Logo"> -->
                             </a>
@@ -67,7 +68,7 @@ crossorigin="anonymous">
                             <div class="collapse navbar-collapse sub-menu-bar" id="navbarSupportedContent">
                                 <ul id="nav" class="navbar-nav ml-auto">
                                     <li class="nav-item active">
-                                        <a class="page-scroll" href="mainpagetable.html">Home</a>
+                                        <a class="page-scroll" href="dashboard.html">Home</a>
                                     </li>
                                 </ul>
                             </div> <!-- navbar collapse -->
@@ -172,7 +173,7 @@ crossorigin="anonymous">
                             <ul class="vertical-nav-menu">
                                 <li class="app-sidebar__heading"><h4>Dashboard</h4></li>
                                 <li>
-                                    <a href="mainpagetable.html">
+                                    <a href="dashboard.html">
                                         <i class="metismenu-icon pe-7s-mouse">
                                         </i><h6 style="color:#3E68D4; padding-top: 10px;">Dashboard</h6>
                                     </a>
@@ -206,7 +207,20 @@ crossorigin="anonymous">
                                         <div>
                                             <p style="color: grey">Take a look at the recommendations that the engine has curated for you based on your interests, risk-appetite and current stock sentiment.</p>
                                         </div>
+                                        
                                     </div>
+                                    <div class="popup" id="popup-3">
+                                        <div class="overlay"></div>
+                                        <div class="content">
+                                          <div class="close-btn" onclick="togglePopupthree()">×</div>
+                                          <h1 class="popuph">Recommendations</h1>
+                                          <p>The recommendations are tailor made to fit your requirements. Three factors are considered to make the final recommendations.</p>
+                                          <p>1) Real-time Sentiment Analysis from twitter to understand public sentiment of the stock</p>
+                                          <p>2) Your risk-appetite helps us narrow down the recommendations from the stock predictions we make from our algorithms</p>
+                                          <p>3) Your interest sector is also used to narrow down the recommendations to fit you perfectly</p>
+                                        </div>
+                                      </div>
+                                            <a onclick="togglePopupthree()" class="icon-link" style="color:#3E68D4"><i class="fa fa-question"></i></a>
                                 </div>
                                 <div class="page-title-actions">
                                 </div>    </div>
@@ -300,6 +314,12 @@ crossorigin="anonymous">
             var el = document.getElementById("rectable");
             el.innerHTML = "";
             el.appendChild(table);
+        }
+    </script>
+    <script>
+          function togglePopupthree(){
+            document.getElementById("popup-3").classList.toggle("active");
+
         }
     </script>
 </body>

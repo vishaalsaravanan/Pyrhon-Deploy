@@ -25,6 +25,7 @@
 crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css">
     <link rel="shortcut icon" href="{{url_for('static', filename = 'land_in_up/assets/images/favicon.png')}}" type="image/png">
+    <link href="{{url_for('static', filename = 'mainpageassets/css/style.css')}}" rel="stylesheet"></head>
         
     <!--====== Animate CSS ======-->
     <link rel="stylesheet" href="{{url_for('static', filename = 'land_in_up/assets/css/animate.css')}}">
@@ -47,7 +48,7 @@ crossorigin="anonymous">
                 <div class="row">
                     <div class="col-lg-12">
                         <nav class="navbar navbar-expand-lg">
-                            <a class="navbar-brand" href="mainpagetable.html">
+                            <a class="navbar-brand" href="dashboard.html">
                                 <h1>AIRE</h1>
                                 <!-- <img src="assets/images/AIRE_logo.png" width="111.196" height="30.566"" alt="Logo"> -->
                             </a>
@@ -60,7 +61,7 @@ crossorigin="anonymous">
                             <div class="collapse navbar-collapse sub-menu-bar" id="navbarSupportedContent">
                                 <ul id="nav" class="navbar-nav ml-auto">
                                     <li class="nav-item active">
-                                        <a class="page-scroll" href="mainpagetable.html">Home</a>
+                                        <a class="page-scroll" href="dashboard.html">Home</a>
                                     </li>
                                 </ul>
                             </div> <!-- navbar collapse -->
@@ -74,7 +75,7 @@ crossorigin="anonymous">
             </div> <!-- container -->
         </div> <!-- navbar area -->
         <div>
-            <h1 style="color: white;">space</h2>
+            <h1 style="color: white;">&nbsp</h2>
           </div>
     <div>
     <div class="app-container app-theme-white body-tabs-shadow fixed-sidebar fixed-header">
@@ -165,7 +166,7 @@ crossorigin="anonymous">
                             <ul class="vertical-nav-menu">
                                 <li class="app-sidebar__heading"><h4>Menu</h4></li>
                                 <li>
-                                    <a href="mainpagetable.html">
+                                    <a href="dashboard.html">
                                         <i class="metismenu-icon pe-7s-mouse">
                                         </i><h6 style="color:#3E68D4; padding-top: 10px;">Dashboard</h6>
                                     </a>
@@ -191,9 +192,32 @@ crossorigin="anonymous">
                             <div class="page-title-wrapper">
                                 <div class="page-title-heading">
                                     <div>
-                                        <h2 style="color:#3E68D5">Hey, </h2><h2 id="name_of_user">name</h2>
+                                        <h2 style="color:#3E68D5">Hey, </h2><h2 id="name_of_user">user</h2>
                                         <div>
-                                            <p style="color: grey">Check out how the stock market is today. Use the search bar if you're looking for something specific</p>
+                                            <p style="color: grey">Here's what we know about you</p>
+                                        </div>
+                                        <div class="popup" id="popup-1">
+                                            <div class="overlay"></div>
+                                            <div class="content">
+                                              <div class="close-btn" onclick="togglePopupone()">×</div>
+                                              <h1 class="popuph">Tier</h1>
+                                              <p>The tier you belong to is dictated by the risk score. Tier A (Not much of risk taker), Tier B (Low risk taker), Tier C ( Moderate risk taker), Tier D (High risk taker)</p>
+                                              <img src="../static/mainpageassets/assets/images/risk-appetite.png" alt="risk-appetite-diagram" width="500" height="auto">
+                                            </div>
+                                          </div>
+                                          <div class="popup" id="popup-2">
+                                            <div class="overlay"></div>
+                                            <div class="content">
+                                              <div class="close-btn" onclick="togglePopuptwo()">×</div>
+                                              <h1 class="popuph">Risk Score</h1>
+                                              <p>The risk score is calculated based on your answers in the form you filled while registering. The risk score will be used by the algorithm to give you recommendation that are suitable for your risk-appetite.</p>
+                                              <p>Scored from 0 to 1</p>
+                                            </div>
+                                          </div>
+                                        <div>
+                                            <div id="usercardlayout">
+        
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -207,6 +231,10 @@ crossorigin="anonymous">
                         </div>
                         <div class="row">
                             <div class="col-md-12">
+                                <h2 style="color: black;">The market today</h2>
+                                <div>
+                                    <p style="color: grey">Check out how the stock market is today. Use the search bar if you're looking for something specific</p>
+                                </div>
                                 <div class="container-fluid">
                                     <main class="row">
                                         <div class="col">

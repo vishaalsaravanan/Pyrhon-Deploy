@@ -21,6 +21,38 @@
             var lname_to_be_displayed = snapshot.val().last_name;
             document.getElementById("name_of_user").innerHTML = fname_to_be_displayed + " " + lname_to_be_displayed;
             document.getElementById("name_of_user_2").innerHTML = fname_to_be_displayed + " " + lname_to_be_displayed;
+            const container = document.getElementById('usercardlayout');
+            //create card element
+            const card = document.createElement('div');
+            card.classList = 'card-body';
+
+            //constructing card
+            const content = `
+            <div class="row">
+              <div class="card-container>
+                  <section class="page-contain">
+                      <a onclick="togglePopupone()" class="data-card">
+                      <h3 class="hthree">Tier ${snapshot.val().tier}</h3>
+                      <h3 class="hfour">INTERESTED SECTOR:</h3>
+                      <h5 class="hfive">${snapshot.val().interested_sector}</h5>
+                      </a>
+                  </section>
+              </div>
+              <div class="card-container>
+                <section class="page-contain">
+                  <a onclick="togglePopuptwo()" class="data-card-two">
+                  <h3 class="hthree">RISK SCORE: ${snapshot.val().risk_score}<h3>
+                  <h3 class="hfour">INVESTMENTS MADE:</h3>
+                  <h5 class="hfive">${snapshot.val().stocks_already}</h5>
+                  </a>
+                </section>
+              </div>
+            </div>
+                `;
+
+                //append newly created card element to the container
+                container.innerHTML += content;
+
           })
       }
 
@@ -36,3 +68,15 @@
         }
       });
   }
+
+  function togglePopupone(){
+    document.getElementById("popup-1").classList.toggle("active");
+
+  }
+
+  function togglePopuptwo(){
+    document.getElementById("popup-2").classList.toggle("active");
+
+  }
+
+  

@@ -60,24 +60,20 @@ firebase.auth().onAuthStateChanged(function(user){
 
                             //constructing card
                             const content = `
-                                    
-                            <div class="card-container">
-                                <div class="card card-1">
-                                <div class="card-img"></div>
-                                <a href="" class="card-link">
-                                    <div class="card-img-hovered"></div>
-                                </a>
-                                <div class="card-info">
-                                    <div class="card-about">
-                                    <a class="card-tag tag-news">${simusers.tier}</a>
-                                    <div class="card-time">Risk Score ${simusers.risk_score}</div>
-                                    </div>
-                                    <h1 class="card-title">${simusers.first_name} ${simusers.last_name}</h1>
-                                    <p class="card-para"> Interested Sectors:  ${simusers.interested_sector}</p>
-                                    <div class="card-creator"><a href="">Investments Made: ${simusers.stocks_already}</a></div>
-                                </div>
-                                </div>
-                            </div> 
+                            <div class="card-container>
+                                <section class="page-contain">
+                                    <a class="data-card-two">
+                                    <h3 class="hthree">${simusers.first_name} ${simusers.last_name}</h3>
+                                    <h4 class="hfour">Tier ${simusers.tier}</h4>
+                                    <h4 class="hfour">INTERESTED SECTOR:</h4>
+                                    <h5 class="hfive">${simusers.interested_sector}</h5>
+                                    <h4 class="hfour">INVESTMENTS MADE:</h4>
+                                    <h5 class="hfive">${simusers.stocks_already}</h5>
+                                    <h4 class="hfour">INVESTMENTS MADE:</h4>
+                                    <h5 class="hfive">${simusers.risk_score}</h5>
+                                    </a>
+                            </section>
+                            </div>
                                 `;
 
                                 //append newly created card element to the container
@@ -92,22 +88,19 @@ firebase.auth().onAuthStateChanged(function(user){
                             //constructing card
                             const content_2 = `
                                     
-                            <div class="card-container">
-                                <div class="card card-2">
-                                <div class="card-img"></div>
-                                <a href="" class="card-link">
-                                    <div class="card-img-hovered"></div>
-                                </a>
-                                <div class="card-info">
-                                    <div class="card-about">
-                                    <a class="card-tag tag-news">${simusers.tier}</a>
-                                    <div class="card-time">Risk Score ${simusers.risk_score}</div>
-                                    </div>
-                                    <h1 class="card-title">${simusers.first_name} ${simusers.last_name}</h1>
-                                    <p class="card-para"> Interested Sectors:  ${simusers.interested_sector}</p>
-                                    <div class="card-creator"><a href="">Investments Made: ${simusers.stocks_already}</a></div>
-                                </div>
-                                </div>
+                            <div class="card-container>
+                                <section class="page-contain">
+                                    <a class="data-card">
+                                    <h3 class="hthree">${simusers.first_name} ${simusers.last_name}</h3>
+                                    <h4 class="hfour">Tier ${simusers.tier}</h4>
+                                    <h4 class="hfour">INTERESTED SECTOR:</h4>
+                                    <h5 class="hfive">${simusers.interested_sector}</h5>
+                                    <h4 class="hfour">INVESTMENTS MADE:</h4>
+                                    <h5 class="hfive">${simusers.stocks_already}</h5>
+                                    <h4 class="hfour">INVESTMENTS MADE:</h4>
+                                    <h5 class="hfive">${simusers.risk_score}</h5>
+                                    </a>
+                            </section>
                             </div> 
                                 `;
 

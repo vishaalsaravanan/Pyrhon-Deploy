@@ -13,7 +13,7 @@ from pandas_datareader import data
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, render_template, request
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 
 #twitter imports
@@ -81,9 +81,14 @@ params = (
 ############################## sentiment analysis start ######################################
 #getting tweets
 def getTweets(stock_name):
+    N_DAYS_AGO = 14
+
+    today = datetime.now()    
+    n_days_ago = today - timedelta(days=N_DAYS_AGO)
+    n_days_ago = n_days_ago.strftime('%Y-%m-%d')
     search_term = '#' + stock_name + ' -filter:retweets'
     #create a cursor object
-    tweets = tweepy.Cursor(api.search, q=search_term, lang='en', since='2021-05-18', tweet_mode='extended').items(100)
+    tweets = tweepy.Cursor(api.search, q=search_term, lang='en', since=n_days_ago, tweet_mode='extended').items(100)
     #store the tweets in a variable
     all_tweets = [tweet.full_text for tweet in tweets]
     return all_tweets
@@ -879,10 +884,10 @@ def signin():
 def userInfoForm():
     return render_template('userInfoForm.html')
   
-@application.route('/mainpagetable.html')
-def mainpagetable():
+@application.route('/dashboard.html')
+def dashboard():
     user_risk_calculator()
-    return render_template('mainpagetable.html')
+    return render_template('dashboard.html')
 
 @application.route('/similar_users.html')
 def similar_users():

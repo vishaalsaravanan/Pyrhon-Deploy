@@ -23,7 +23,7 @@ var firebaseConfig = {
     .then(function(response) {
                 firebase.auth().onAuthStateChanged(user => {
                   if(user) {
-                    window.location = 'mainpagetable.html';
+                    window.location = 'dashboard.html';
                     var current_user_id = firebase.auth().currentUser.uid;
                     firebase.database().ref('User_info/'+current_user_id).on('value', function(snapshot){
                       var risk_score = snapshot.val().risk_score;
